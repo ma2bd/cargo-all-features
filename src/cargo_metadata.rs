@@ -230,14 +230,33 @@ impl TryFrom<json::JsonValue> for Metadata {
         let max_combination_size =
             json_value["metadata"]["cargo-all-features"]["max_combination_size"].as_usize();
 
-        if skip_optional_dependencies || max_combination_size.is_some() {
+        let skip_feature_sets: Vec<FeatureList> = json_value["metadata"]["cargo-all-features"]
+            ["skip_feature_sets"]
+            .members()
+            .map(|member| {
+                member
+                    .members()
+                    .map(|feature| feature.as_str().unwrap().to_owned())
+                    .map(Feature)
+                    .collect()
+            })
+            .collect();
+
+        if skip_optional_dependencies
+            || max_combination_size.is_some()
+            || !skip_feature_sets.is_empty()
+        {
             // TODO: we are shamelessly bypassing some of the invariants enforced in
             // `Package::try_from`.
             for package in &mut packages {
                 package.skip_optional_dependencies |= true;
-                if max_combination_size.is_some() {
-                    package.max_combination_size = max_combination_size;
+                if let Some(max_combination_size) = max_combination_size {
+                    package.max_combination_size = Some(std::cmp::min(
+                        max_combination_size,
+                        package.max_combination_size.unwrap_or(std::usize::MAX),
+                    ));
                 }
+                package.skip_feature_sets.extend(skip_feature_sets.clone())
             }
         }
 

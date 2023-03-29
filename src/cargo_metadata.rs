@@ -225,9 +225,19 @@ impl TryFrom<json::JsonValue> for Metadata {
 
         let maybe_skip_optional =
             json_value["metadata"]["cargo-all-features"]["skip_optional_dependencies"].as_bool();
-        if maybe_skip_optional.unwrap_or(false) {
+        let skip_optional_dependencies = maybe_skip_optional.unwrap_or(false);
+
+        let max_combination_size =
+            json_value["metadata"]["cargo-all-features"]["max_combination_size"].as_usize();
+
+        if skip_optional_dependencies || max_combination_size.is_some() {
+            // TODO: we are shamelessly bypassing some of the invariants enforced in
+            // `Package::try_from`.
             for package in &mut packages {
-                package.skip_optional_dependencies = true
+                package.skip_optional_dependencies |= true;
+                if max_combination_size.is_some() {
+                    package.max_combination_size = max_combination_size;
+                }
             }
         }
 

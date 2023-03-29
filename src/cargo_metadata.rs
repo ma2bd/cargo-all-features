@@ -218,10 +218,18 @@ impl TryFrom<json::JsonValue> for Metadata {
             .map(|member| member.as_str().unwrap().to_owned())
             .collect();
 
-        let packages = json_value["packages"]
+        let mut packages = json_value["packages"]
             .members()
             .map(|member| Package::try_from(member.to_owned()))
-            .collect::<Result<_, String>>()?;
+            .collect::<Result<Vec<Package>, String>>()?;
+
+        let maybe_skip_optional =
+            json_value["metadata"]["cargo-all-features"]["skip_optional_dependencies"].as_bool();
+        if maybe_skip_optional.unwrap_or(false) {
+            for package in &mut packages {
+                package.skip_optional_dependencies = true
+            }
+        }
 
         Ok(Metadata {
             workspace_root,

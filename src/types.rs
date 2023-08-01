@@ -28,7 +28,7 @@ impl AsMut<<FeatureList as Deref>::Target> for &mut FeatureList {
 
 impl AsRef<<FeatureList as Deref>::Target> for &FeatureList {
     fn as_ref(&self) -> &<FeatureList as Deref>::Target {
-        self.deref()
+        self
     }
 }
 
@@ -48,7 +48,7 @@ impl Deref for FeatureList {
 
 impl AsRef<str> for &Feature {
     fn as_ref(&self) -> &str {
-        self.deref()
+        self
     }
 }
 
